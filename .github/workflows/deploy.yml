@@ -54,7 +54,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --config dist/server/wrangler.json
+          workingDirectory: dist/server
+          command: deploy --config wrangler.json
           secrets: |
             TRIAGE_PROFILE
         env:

@@ -6,6 +6,7 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
 export default defineConfig(async ({ mode }) => {
   const buildEnv = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
+  const localTriageProfile = buildEnv.TRIAGE_PROFILE?.trim();
   const localBindingConfig = {
     name: buildEnv.CLOUDFLARE_WORKER_NAME || "academic-job-tracker-local",
     main: "./worker/index.ts",
@@ -13,9 +14,10 @@ export default defineConfig(async ({ mode }) => {
     ai: {
       binding: "AI",
     },
-    vars: {
-      TRIAGE_PROFILE: buildEnv.TRIAGE_PROFILE || "",
-    },
+    // Production supplies TRIAGE_PROFILE as a Cloudflare Worker secret through
+    // the deploy action. Keep the optional plain-text binding local-only so the
+    // profile never appears in a generated production Wrangler config or log.
+    ...(localTriageProfile ? { vars: { TRIAGE_PROFILE: localTriageProfile } } : {}),
     d1_databases: [
       {
         binding: "DB",

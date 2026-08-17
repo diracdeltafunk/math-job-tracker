@@ -189,10 +189,24 @@ function configuredTriageProfile() {
 
 function buildPrompt(job: JobRow, pages: Array<{ url: string; text: string }>, triageProfile: string) {
   const evidence = pages.filter((page) => page.text).map((page) => `SOURCE URL: ${page.url}\n${page.text}`).join("\n\n---\n\n");
-  return `You are the academic-job triage reviewer for a personal tracker. Review exactly one posting using the supplied evidence. Read the posting carefully and use the linked application or hiring pages when they are included. Extract facts first, then make a conservative fit decision. Do not guess facts that are not in the evidence; if something is uncertain, say so in triageNote.\n\nText-cleaning rules: return readable human-facing text in every field. Decode HTML entities, including numeric forms such as &#x3C; and &#233;, into their Unicode characters. Remove HTML tags and formatting artifacts such as literal <i>, <b>, and </a> fragments. Preserve meaningful accents, apostrophes, dashes, and mathematical symbols. Never copy an encoded entity or HTML tag into the saved title, organization, location, subject areas, materials, or application summary.\n\nCandidate profile and decision policy:\n${triageProfile}\n\nCurrent tracker record:\n${JSON.stringify({
+  return `You are the academic-job triage reviewer for a personal tracker. Review exactly one posting using the supplied evidence. Read the posting carefully and use the linked application or hiring pages when they are included. Extract facts first, then apply the candidate profile's stated decision threshold. Do not add unstated eligibility rules or preferences. Do not guess facts that are not in the evidence; if something is uncertain, say so in triageNote.
+
+Text-cleaning rules: return readable human-facing text in every field. Decode HTML entities, including numeric forms such as &#x3C; and &#233;, into their Unicode characters. Remove HTML tags and formatting artifacts such as literal <i>, <b>, and </a> fragments. Preserve meaningful accents, apostrophes, dashes, and mathematical symbols. Never copy an encoded entity or HTML tag into the saved title, organization, location, subject areas, materials, or application summary.
+
+Candidate profile and decision policy:
+${triageProfile}
+
+Current tracker record:
+${JSON.stringify({
     id: job.id, organization: job.organization, title: job.title, postingUrl: job.posting_url,
     description: job.description,
-  })}\n\nFetched posting/application evidence:\n${evidence || "No page was fetchable; use the tracker description only and be conservative."}\n\nReturn JSON only, with exactly these keys:\n{
+  })}
+
+Fetched posting/application evidence:
+${evidence || "No page was fetchable; use the tracker description only and follow the candidate profile's uncertainty policy."}
+
+Return JSON only, with exactly these keys:
+{
   "organization": "string",
   "title": "string",
   "positionType": "string",
@@ -206,9 +220,29 @@ function buildPrompt(job: JobRow, pages: Array<{ url: string; text: string }>, t
   "materials": "complete concise list of required materials",
   "workflowStatus": "consider or archived",
   "triageNote": "short explanation of the fit decision and any unresolved uncertainty"
-}\n\nDeadline rules (follow exactly):\n- Choose the most actionable dated deadline. A full-consideration date, priority date, or review-begins date is more important than a later 'until filled' date. Put that chosen instant in deadlineAt and put the context in deadlineQualifier (for example, 'full consideration; open until filled').\n- deadlineAt must be a machine-readable ISO 8601 instant with Z or a numeric offset. Never put prose, a bare date, 'open window', or a parenthetical note in deadlineAt.\n- If the posting gives a date but no time, use 23:59:00 in the source timezone when known; otherwise use 23:59:00 America/New_York (ET). If the posting gives a time but no timezone, use the same ET default. Convert the instant correctly to the ISO timestamp. For example, 11:59 PM ET on October 8, 2026 is 2026-10-09T03:59:00Z, and deadlineTimeZone should be America/New_York.\n- If there is genuinely no dated deadline (for example, only 'open until filled'), use deadlineAt null and explain that in deadlineQualifier. Do not invent a calendar date.\n- Preserve the source's meaningful distinction between full consideration, review begins, priority, and final closing dates in deadlineQualifier.\n\nLocation rules: remove postal/ZIP codes. Use 'Hamilton, NY' rather than 'Hamilton, New York 13346, United States', and 'Aarhus, Denmark' rather than 'Aarhus, 8000, Denmark'. For US locations, use the two-letter state abbreviation and omit 'United States'.\n\nFit and teaching rules: 3-3 or 3/3 means three courses in fall plus three courses in spring, not three total. Follow the candidate profile's teaching preferences; do not archive a job merely because it involves teaching. Evaluate total administrative burden: number of preparations, sections, enrollments, advising/service expectations, and signs of hundreds of students or excessive email/coordination. For R1 research jobs, prioritize research-compatible loads. For liberal-arts teaching jobs, weigh institution, student quality, location, and actual workload together.\n\nArchive jobs that are clear field mismatches, postdocs/temporary roles, senior-only roles, or positions explicitly only for people who are already tenured. Do not archive ordinary tenure-track assistant professor roles. A genuinely plausible job goes to consider; do not use will_apply or applied.`;
 }
 
+Deadline rules (follow exactly):
+- Choose the most actionable dated deadline. A full-consideration date, priority date, or review-begins date is more important than a later 'until filled' date. Put that chosen instant in deadlineAt and put the context in deadlineQualifier (for example, 'full consideration; open until filled').
+- deadlineAt must be a machine-readable ISO 8601 instant with Z or a numeric offset. Never put prose, a bare date, 'open window', or a parenthetical note in deadlineAt.
+- If the posting gives a date but no time, use 23:59:00 in the source timezone when known; otherwise use 23:59:00 America/New_York (ET). If the posting gives a time but no timezone, use the same ET default. Convert the instant correctly to the ISO timestamp. For example, 11:59 PM ET on October 8, 2026 is 2026-10-09T03:59:00Z, and deadlineTimeZone should be America/New_York.
+- If there is genuinely no dated deadline (for example, only 'open until filled'), use deadlineAt null and explain that in deadlineQualifier. Do not invent a calendar date.
+- Preserve the source's meaningful distinction between full consideration, review begins, priority, and final closing dates in deadlineQualifier.
+
+Location rules: remove postal/ZIP codes. Use 'Hamilton, NY' rather than 'Hamilton, New York 13346, United States', and 'Aarhus, Denmark' rather than 'Aarhus, 8000, Denmark'. For US locations, use the two-letter state abbreviation and omit 'United States'.
+
+Role-title and workload interpretation rules:
+- Interpret titles in their national and institutional context. For example, a UK Lecturer may be a permanent early-career research-and-teaching rank analogous to a US Assistant Professor, while a US Lecturer is usually non-tenure-track and teaching-focused. Do not infer desirability from the title alone; apply the candidate profile.
+- A 3-3 or 3/3 teaching load means three courses in fall plus three courses in spring, not three total.
+- When evidence is available, assess workload using the number of preparations, sections, enrollments, coordination, advising, service, and other administrative expectations—not only raw classroom hours. Apply the candidate profile's teaching and institution preferences without assuming that any institution type or amount of teaching is inherently desirable.
+
+Decision rules:
+- Archive a posting when it violates the candidate profile's automatic exclusions or is a clear mismatch under that profile.
+- Put a genuinely plausible posting in consider, using the candidate profile's threshold and uncertainty policy.
+- Never use will_apply or applied as the model's decision.
+
+`;
+}
 export async function POST(request: Request) {
   try {
     const db = getDatabase();

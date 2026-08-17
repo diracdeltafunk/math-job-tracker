@@ -86,6 +86,8 @@ Before adding any personal settings, perform a quick source audit:
 - `.github/workflows/deploy.yml` should reference
   `secrets.TRIAGE_PROFILE`, not contain a candidate profile;
 - the triage route should read `TRIAGE_PROFILE` from the Worker environment;
+- the production build should pass `TRIAGE_PROFILE` to Wrangler as a Worker
+  secret, not embed its value in the generated Wrangler configuration;
 - search tracked files for another candidate's name, email address, website,
   Cloudflare account ID, D1 database ID, and tokens;
 - run `git status` and confirm the worktree is understood before editing.
@@ -133,6 +135,11 @@ Cloudflare's official GitHub Actions guide recommends this token template and
 account scoping. The token is a credential: never ask the user to paste it into
 chat or display it in terminal output.
 
+The deployment workflow passes `TRIAGE_PROFILE` through Wrangler's Worker
+secret support. Do not convert it into a plain `vars` binding for production:
+Wrangler summarizes plain binding values in deployment logs, while Worker
+secrets remain masked.
+
 ## Phase 3: interview the user for the triage profile
 
 Explain that the profile controls only fit decisions. Generic code already
@@ -150,9 +157,6 @@ Ask:
 - Which ranks and contract types are realistic now?
 - Which roles are automatic exclusions: postdocs, visiting jobs, adjunct work,
   senior/tenured ranks, soft-money roles, or something else?
-- How should titles whose meaning varies by country be interpreted? In
-  particular, clarify `Lecturer`, `Assistant Professor`, and local equivalents
-  of tenure-track employment.
 
 ### Round B: research fit
 
@@ -180,8 +184,9 @@ Ask:
   classroom hours.
 - How important are student preparation, research support, sabbaticals, startup
   funding, and graduate supervision?
-- Are unusually prestigious institutions allowed to override a normally
-  unacceptable teaching load or role type? If so, define the exception.
+- Can exceptional institutions, programs, locations, or other positive signals
+  override an otherwise unattractive workload or role type? If so, define the
+  exceptions.
 
 ### Round D: geography and practical constraints
 
@@ -193,9 +198,6 @@ Ask:
 - How should salary and cost of living affect non-local jobs?
 - Is relocation required, acceptable, or undesirable? Are remote or hybrid
   roles relevant?
-- What timezone should be used when a deadline date has no stated time or
-  timezone? If the user has no preference, retain the app default of 11:59 PM
-  America/New_York.
 
 ### Round E: decision threshold and tie-breakers
 
@@ -243,8 +245,10 @@ Decision policy:
 The profile should be specific enough to make consistent decisions, but it
 should contain no phone number, home address, private email, account credential,
 or irrelevant biography. Do not repeat generic rules already enforced by the
-app. Preserve nuanced country-specific title meanings rather than using a single
-US definition worldwide.
+app. Express role preferences in substantive terms such as permanence,
+seniority, research expectations, and teaching emphasis. The generic triage
+prompt—not the candidate profile—handles how titles map to those characteristics
+in different countries.
 
 Show the full draft to the user. Ask them to correct omissions and ambiguous
 rules. Only after explicit approval should you store it as `TRIAGE_PROFILE`.

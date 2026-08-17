@@ -5,6 +5,8 @@ feed, stores every posting in Cloudflare D1, uses Cloudflare Workers AI to
 research and triage postings, and tracks the application workflow from initial
 review through submission.
 
+This exists basically because of how annoying it is to actually find job application deadlines on mathjobs.org. Now you can have a website with a magic button that makes an AI model read the job postings and populate the relevant info for you!
+
 ## How it works
 
 - **Sync MathJobs** imports new RSS records as unprocessed postings.

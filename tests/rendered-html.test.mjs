@@ -42,8 +42,9 @@ test("keeps tracker source free of starter skeleton artifacts", async () => {
 });
 
 test("keeps personalization deployment-only and the application-link field removed", async () => {
-  const [page, jobsRoute, triageRoute, database, viteConfig, workflow, guide, packageJson] = await Promise.all([
+  const [page, styles, jobsRoute, triageRoute, database, viteConfig, workflow, guide, packageJson] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/api/jobs/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/triage/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/tracker-db.ts", import.meta.url), "utf8"),
@@ -55,6 +56,9 @@ test("keeps personalization deployment-only and the application-link field remov
   assert.doesNotMatch(`${page}\n${jobsRoute}\n${triageRoute}`, /applicationUrl|Apply ↗|Application link/);
   assert.match(page, /formatShortDeadline/);
   assert.match(page, /collapsed-organization[^]*collapsed-deadline/);
+  assert.match(page, /collapsed-organization" title=\{job\.organization\}/);
+  assert.match(styles, /\.job-card\.is-collapsed \{[^}]*overflow: hidden/);
+  assert.match(styles, /\.collapsed-organization \{[^}]*flex: 1 1 0;[^}]*text-overflow: ellipsis/);
   assert.match(triageRoute, /configuredTriageProfile/);
   assert.match(triageRoute, /TRIAGE_PROFILE deployment secret is configured/);
   assert.doesNotMatch(triageRoute, /export const TRIAGE_PROFILE\s*=/);

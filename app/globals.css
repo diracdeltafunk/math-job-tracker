@@ -63,9 +63,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--navy); box-shado
 .list-column h2 { font-size: 23px; }
 .job-stack { display: grid; gap: 12px; }
 .job-card { padding: 17px; border: 1px solid var(--line); background: var(--white); }
-.job-card.is-collapsed { padding: 12px 17px; }
-.job-card-collapsed { display: flex; align-items: center; gap: 8px; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
-.collapsed-organization { flex: 1 1 auto; min-width: 0; overflow: hidden; color: var(--navy-dark); font: 700 14px/1.15 Georgia, serif; text-overflow: ellipsis; white-space: nowrap; }
+.job-card.is-collapsed { min-width: 0; max-width: 100%; overflow: hidden; padding: 12px 17px; }
+.job-card-collapsed { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; max-width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.collapsed-organization { flex: 1 1 0; min-width: 0; overflow: hidden; color: var(--navy-dark); font: 700 14px/1.15 Georgia, serif; text-overflow: ellipsis; white-space: nowrap; }
 .collapsed-separator { flex: 0 0 auto; color: var(--muted); }
 .collapsed-deadline { flex: 0 0 auto; color: var(--muted); font-size: 11px; white-space: nowrap; }
 .collapse-mark { color: var(--coral); font-size: 16px; line-height: 1; }

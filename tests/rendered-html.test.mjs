@@ -66,6 +66,8 @@ test("keeps personalization deployment-only and the application-link field remov
   assert.match(workflow, /secrets\.TRIAGE_PROFILE/);
   assert.match(guide, /Triage unprocessed/);
   assert.match(guide, /daily usage limits/);
+  assert.match(guide, /already owns a repository[^]*do \*\*not\*\* create/i);
+  assert.match(guide, /Use this template/);
   await assert.rejects(access(new URL("../config/triage-profile.ts", import.meta.url)));
   assert.match(database, /DROP COLUMN application_url/);
   assert.doesNotMatch(viteConfig, /openai\/sites|hosting\.json/);

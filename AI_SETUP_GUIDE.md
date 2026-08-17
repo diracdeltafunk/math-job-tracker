@@ -50,24 +50,35 @@ The repository must not contain real values in `.env`, `.env.local`,
 committed build output. The app deliberately refuses to triage when
 `TRIAGE_PROFILE` is absent.
 
-## Phase 1: make the user's repository
+## Phase 1: reuse or create the user's repository
 
-Ask for the user's GitHub username and desired repository name. Explain that a
-fork of a public repository is public. If they require a private repository,
-create a new private repository from the sanitized template instead of using
-GitHub's fork button.
+First determine whether the user already clicked **Use this template** or
+**Fork**, or already has a local working copy. Ask for the repository URL and,
+when a terminal is available, inspect `git remote -v` and
+`git rev-parse --show-toplevel`.
 
-For the normal public setup, have the user fork the sanitized public template
-on GitHub, or use GitHub CLI:
+If the user already owns a repository containing this tracker, do **not** create
+or fork another repository. Clone or open their existing repository, confirm
+that its `origin` belongs to them rather than `diracdeltafunk`, and continue with
+the source audit below. Treat repository creation as complete.
+
+If the user does not yet have a repository, recommend **Use this template** on
+[`diracdeltafunk/math-job-tracker`](https://github.com/diracdeltafunk/math-job-tracker).
+A template copy can be public or private and starts with independent history.
+Using GitHub CLI, the equivalent is:
 
 ```bash
-gh repo fork diracdeltafunk/math-job-tracker --clone
-cd math-job-tracker
-npm ci
+gh repo create USER/REPOSITORY --template diracdeltafunk/math-job-tracker --private --clone
+cd REPOSITORY
 ```
 
-Confirm that `git remote -v` identifies the user's fork as `origin`. Do not
-continue if `origin` is the upstream project.
+Replace `--private` with `--public` if the user wants a public copy. A GitHub
+fork also works, but a public repository's fork is public and is more useful
+when the user intends to contribute changes upstream.
+
+Confirm that `git remote -v` identifies the user's repository as `origin`. Do
+not continue if `origin` is the upstream template itself. Then install the
+project dependencies with `npm ci`.
 
 Before adding any personal settings, perform a quick source audit:
 
@@ -83,9 +94,11 @@ If the source contains another person's profile or credentials, stop and tell
 the user not to use that repository. A public template should have been created
 from a sanitized working tree with fresh Git history.
 
-GitHub disables workflows in forks by default. Leave Actions disabled until
-the Cloudflare configuration is complete. Do not change the deployment branch:
-this project intentionally deploys only from `master`.
+The template's deployment job intentionally skips itself until
+`CLOUDFLARE_ACCOUNT_ID` is configured. GitHub disables workflows in forks by
+default, while repositories created with **Use this template** are independent
+repositories. Do not change the deployment branch: this project intentionally
+deploys only from `master`.
 
 ## Phase 2: create the Cloudflare resources
 
@@ -282,11 +295,14 @@ Expected secrets:
 
 ## Phase 6: enable Actions and deploy
 
-On the fork's **Actions** tab, enable workflows. GitHub documents that workflows
-do not run in forked repositories until explicitly enabled.
+Open the repository's **Actions** tab and confirm that the **Deploy academic job
+tracker** workflow is available. If the repository is a GitHub fork, explicitly
+enable workflows; GitHub does not run workflows in forks by default. A
+repository created with **Use this template** is independent and normally has
+Actions available already.
 
 The deployment workflow supports a manual run, which is preferable for the
-first deployment because the fork event itself occurred before configuration:
+first deployment after configuration:
 
 ```bash
 gh workflow run deploy.yml
